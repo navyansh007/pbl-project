@@ -30,7 +30,8 @@
     <nav class="fixed w-full z-50 glass border-b border-slate-800/50 px-8 py-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
             <div class="bg-white p-1 rounded flex items-center justify-center shadow-md" style="height: 48px; width: 48px;">
-                <img src="mujlogo.jpg" alt="MUJ" class="h-full w-auto object-contain" onerror="this.src='https://via.placeholder.com/50?text=MUJ'">
+                <img src="mujlogo.jpg" alt="MUJ" class="h-full w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <span class="text-[10px] font-black text-blue-700 items-center justify-center w-full h-full" style="display:none;">MUJ</span>
             </div>
             <div class="flex flex-col text-left">
                 <span class="text-xl font-black text-white leading-none uppercase tracking-tighter">PBL <span class="text-blue-500 italic">2026</span></span>
@@ -52,14 +53,14 @@
             <h1 class="text-6xl md:text-7xl font-extrabold mb-4 uppercase leading-tight"><span class="gradient-text uppercase">CodeSentry</span></h1>
             <p class="text-xl md:text-2xl text-slate-400 font-semibold tracking-wide mb-8">AI-Powered Code Review System</p>
             <p class="text-slate-400 max-w-2xl mx-auto italic text-lg leading-relaxed border-l-2 border-blue-500/30 pl-6 text-left">
-                "Can a two-layer system combining conventional static analysis with RAG-augmented large language models detect a significantly broader class of software defects, including architectural and semantic issues, than either approach alone?"
+                "Can a hybrid system combining conventional static analysis with RAG-augmented large language models detect a significantly broader class of software defects, including architectural and semantic issues, than either approach alone?"
             </p>
         </section>
 
         <section id="problem" class="grid md:grid-cols-2 gap-12 items-stretch">
             <div class="glass p-10 rounded-[2.5rem] flex flex-col justify-center border-l-4 border-blue-600">
                 <h2 class="text-3xl font-extrabold mb-6">Problem Statement</h2>
-                <p class="text-slate-400 leading-relaxed text-justify">Manual code review is the single largest bottleneck in modern software delivery. Studies show reviewers miss up to 40% of defects under time pressure. Existing automated tools fall into two silos: rule-based linters that catch syntax and style violations but are blind to semantic, architectural, and contextual issues; and standalone LLMs that lack grounding in the actual codebase, leading to hallucinated or generic feedback. Neither approach alone provides the depth and breadth required for production-grade review.</p>
+                <p class="text-slate-400 leading-relaxed text-justify">Manual code review is the single largest bottleneck in modern software delivery. Studies show reviewers miss up to 40% of defects under time pressure. Existing automated tools fall into two silos: rule-based linters that catch syntax and style violations but are blind to semantic, architectural, and contextual issues; and standalone LLMs that lack grounding in the actual codebase, leading to hallucinated or generic feedback. Neither approach alone provides the depth and breadth required for production-grade review. And even when a tool does catch something, the output is rarely actionable: a wall of linter warnings or a paragraph of AI commentary still leaves a human to decide whether the code is good enough to merge, which is exactly the decision CI/CD pipelines need automated.</p>
             </div>
             <div class="space-y-6">
                 <div class="glass p-7 rounded-3xl border-r-4 border-blue-500/50">
@@ -68,7 +69,7 @@
                 </div>
                 <div class="glass p-7 rounded-3xl border-r-4 border-purple-500/50">
                     <h3 class="text-purple-400 font-bold text-xs uppercase tracking-widest mb-2">Research Gap / Innovation</h3>
-                    <p class="text-sm text-slate-500 italic">No existing tool fuses deterministic static analysis with context-aware LLM review in a single pipeline. CodeSentry bridges this gap with a novel two-layer architecture: Layer 1 runs Pylint, Flake8, Bandit, and Radon for provable defect detection; Layer 2 uses RAG over ChromaDB embeddings to ground a Qwen3-Coder LLM in the actual codebase, which eliminates hallucination and enables semantic, architectural, and security reasoning that no linter can perform.</p>
+                    <p class="text-sm text-slate-500 italic">No existing CLI tool combines deterministic, multi-language static analysis with context-aware, provider-agnostic LLM review in one CI-ready pipeline. CodeSentry closes that gap in four stages: static analyzers tuned per language, a RAG-grounded review that works with whichever LLM provider you configure (commercial or self-hosted) so the model reasons about your actual codebase instead of guessing, a deterministic 0-100 quality score built from those findings, and a rule engine that checks the score to automatically pass or fail a CI/CD pipeline.</p>
                 </div>
             </div>
         </section>
@@ -79,17 +80,43 @@
                 <div class="glass p-8 rounded-3xl text-center">
                     <i class="fas fa-database text-blue-500 text-3xl mb-4"></i>
                     <h3 class="font-bold mb-2 uppercase text-xs tracking-widest">Dataset / Input</h3>
-                    <p class="text-sm text-slate-500">Accepts any source repository as input. Files are recursively scanned across 10+ languages (.py, .js, .ts, .java, .go, etc.), filtered by configurable exclusion rules, and semantically chunked into function/class-aware segments with overlapping windows for embedding.</p>
+                    <p class="text-sm text-slate-500">Accepts any source repository as input via the CLI. Files are recursively scanned, filtered by configurable exclusion rules, and semantically chunked into function/class-aware segments with overlapping windows for embedding. <code class="text-blue-400">--diff</code> mode restricts a run to only git-changed files for fast PR checks.</p>
                 </div>
                 <div class="glass p-8 rounded-3xl text-center">
                     <i class="fas fa-microchip text-purple-500 text-3xl mb-4"></i>
                     <h3 class="font-bold mb-2 uppercase text-xs tracking-widest">Model / Architecture</h3>
-                    <p class="text-sm text-slate-500"><strong>Layer 1:</strong> Pylint + Flake8 + Bandit + Radon for deterministic analysis. <strong>Layer 2:</strong> Code chunks are embedded via sentence-transformers/all-MiniLM-L6-v2, stored in ChromaDB, and retrieved via cosine similarity to augment prompts sent to Qwen3-Coder-30B for context-grounded AI review.</p>
+                    <p class="text-sm text-slate-500"><strong>Layer 1:</strong> language-aware static analyzers, including Pylint, Flake8, Bandit, and Radon for Python, ESLint for JS/TS, go vet and gofmt for Go, Clippy for Rust, RuboCop for Ruby, Checkstyle for Java, and cppcheck for C/C++. <strong>Layer 2:</strong> code chunks get embedded with sentence-transformers/all-MiniLM-L6-v2, stored in ChromaDB, and retrieved by cosine similarity to augment prompts sent to <strong>any configured LLM provider</strong>, whether that's OpenAI, Anthropic, Google Gemini, Azure OpenAI, Hugging Face, or a fully local Ollama model, for context-grounded AI review.</p>
                 </div>
                 <div class="glass p-8 rounded-3xl text-center border-2 border-green-500/20 bg-green-500/5">
-                    <i class="fab fa-python text-green-500 text-3xl mb-4"></i>
+                    <i class="fas fa-terminal text-green-500 text-3xl mb-4"></i>
                     <h3 class="font-bold mb-4 uppercase text-xs tracking-widest text-green-400">Live Execution</h3>
                     <a href="https://github.com/navyansh007/CodeSentry" target="_blank" class="px-6 py-2 bg-green-600 rounded-full text-[10px] font-black hover:bg-green-500 transition shadow-lg shadow-green-900/40">VIEW CODE / DEMO</a>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <h3 class="text-center text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] mb-8">The Four-Stage Pipeline</h3>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="glass p-6 rounded-2xl border-t-2 border-blue-500/60">
+                        <span class="text-blue-500 font-mono text-xs font-black">01</span>
+                        <h4 class="font-bold text-sm mt-2 mb-2 uppercase tracking-wide">Multi-Language Static Analysis</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">8 languages, each running its own tool set on whatever's installed. Missing tools get skipped, not treated as failures.</p>
+                    </div>
+                    <div class="glass p-6 rounded-2xl border-t-2 border-purple-500/60">
+                        <span class="text-purple-500 font-mono text-xs font-black">02</span>
+                        <h4 class="font-bold text-sm mt-2 mb-2 uppercase tracking-wide">Provider-Agnostic AI Review</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">RAG-grounded review against any LLM backend. Swap providers in <code class="text-purple-400">config.yaml</code> or with <code class="text-purple-400">--provider</code>, no code changes needed.</p>
+                    </div>
+                    <div class="glass p-6 rounded-2xl border-t-2 border-amber-500/60">
+                        <span class="text-amber-500 font-mono text-xs font-black">03</span>
+                        <h4 class="font-bold text-sm mt-2 mb-2 uppercase tracking-wide">Deterministic Quality Score</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">A 0-100 score plus a letter grade, built from weighted, per-file-normalized static findings. It's deterministic, so it still works with <code class="text-amber-400">--no-ai</code>.</p>
+                    </div>
+                    <div class="glass p-6 rounded-2xl border-t-2 border-green-500/60">
+                        <span class="text-green-500 font-mono text-xs font-black">04</span>
+                        <h4 class="font-bold text-sm mt-2 mb-2 uppercase tracking-wide">Configurable Rule Engine</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">A YAML-defined pass/fail policy (for example, score at least 70, zero security issues) that exits non-zero to gate CI/CD automatically.</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -103,7 +130,7 @@
                         <span class="text-slate-400 font-bold uppercase text-xs tracking-widest">Defect Coverage</span>
                         <span class="text-blue-400 font-mono font-black text-3xl">89.8%</span>
                     </div>
-                    <p class="text-slate-500 text-sm italic text-justify leading-relaxed">Evaluated across 5 open-source Python projects (Click, HTTPX, Black, SQLModel, Arrow). Detection rates were measured in 4 categories: Security (93%), Code Quality (89%), Architecture (86%), and Best Practices (91%). The averaged defect coverage of 89.8% represents a +45.6% improvement over static-only analysis, which averaged 44.2% across the same categories.</p>
+                    <p class="text-slate-500 text-sm italic text-justify leading-relaxed">Evaluated across 5 open-source Python projects (Click, HTTPX, Black, SQLModel, Arrow). Detection rates were measured in 4 categories: Security (93%), Code Quality (89%), Architecture (86%), and Best Practices (91%). The averaged defect coverage of 89.8% is a +45.6% improvement over static-only analysis, which averaged 44.2% across the same categories.</p>
                 </div>
             </div>
         </section>
@@ -116,7 +143,7 @@
                     <p class="font-black text-xl text-slate-100">Dr. Sakshi Shringi</p>
                 </div>
                 <div class="glass px-12 py-8 rounded-[2rem] border-b-4 border-slate-700">
-                    <p class="text-[9px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Team Member 1</p>
+                    <p class="text-[9px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Developer</p>
                     <p class="font-black text-xl text-slate-100">Navyansh Kesarwani</p>
                     <p class="text-[10px] text-slate-500 mt-1">2427030652</p>
                 </div>
